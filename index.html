@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnimTube</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+body{background:#0f0a1e;color:white;font-family:sans-serif}
+.card{background:#1a1233;border:1px solid #2e1a5e;border-radius:16px;overflow:hidden}
+.btn-purple{background:linear-gradient(90deg,#7c3aed,#a855f7)}
+input,textarea,select{background:#120b26!important;border:1px solid #2e1a5e!important;color:white!important}
+</style>
+</head>
+<body>
+<div class="sticky top-0 z-50 bg-[#0f0a1e]/90 backdrop-blur p-3 flex items-center justify-between border-b border-purple-900">
+  <div class="flex items-center gap-2">
+    <div class="w-9 h-9 bg-purple-600 rounded-xl flex items-center justify-center font-black text-xl">▶</div>
+    <div><b class="text-lg leading-none">Anim<span class="text-purple-400">Tube</span></b><p class="text-[11px] text-gray-400">Anime Shorts Indonesia</p></div>
+  </div>
+  <button onclick="document.getElementById('uploadModal').classList.remove('hidden')" class="btn-purple px-4 py-2 rounded-full font-bold text-sm">+ Upload</button>
+</div>
+
+<div class="p-3">
+  <input id="searchInput" oninput="renderVideos()" placeholder="🔍 Cari anime, judul..." class="w-full p-3 rounded-full outline-none">
+</div>
+
+<div class="flex gap-2 px-3 overflow-x-auto pb-2">
+  <button onclick="setCat('Semua')" class="catBtn bg-purple-600 px-4 py-1.5 rounded-full text-sm whitespace-nowrap">Semua</button>
+  <button onclick="setCat('AMV')" class="catBtn bg-[#1a1233] px-4 py-1.5 rounded-full text-sm whitespace-nowrap">AMV</button>
+  <button onclick="setCat('Edit')" class="catBtn bg-[#1a1233] px-4 py-1.5 rounded-full text-sm whitespace-nowrap">Edit</button>
+  <button onclick="setCat('Meme')" class="catBtn bg-[#1a1233] px-4 py-1.5 rounded-full text-sm whitespace-nowrap">Meme</button>
+  <button onclick="setCat('Fan Art')" class="catBtn bg-[#1a1233] px-4 py-1.5 rounded-full text-sm whitespace-nowrap">Fan Art</button>
+</div>
+
+<div id="feed" class="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-24"></div>
+<div id="empty" class="hidden text-center py-20 text-gray-400">Belum ada video.<br>Jadi yang pertama upload!</div>
+
+<div id="uploadModal" class="hidden fixed inset-0 z-[100] bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div class="bg-[#1a1233] w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5">
+    <div class="flex justify-between items-center mb-4"><h2 class="font-bold text-lg">Upload Video</h2><button onclick="closeModal()" class="text-2xl">×</button></div>
+    <label class="block border-2 border-dashed border-purple-600 rounded-2xl p-6 text-center cursor-pointer">
+      <span id="fileLabel">📁 Pilih Video (Max 30 detik)<br><small class="text-gray-400">MP4 / Max 20MB</small></span>
+      <input type="file" id="videoFile" accept="video/*" class="hidden" onchange="document.getElementById('fileLabel').innerText=this.files[0].name">
+    </label>
+    <input id="titleInput" placeholder="Judul video..." class="w-full p-3 rounded-xl mt-3 outline-none">
+    <input id="userInput" placeholder="Nama kamu..." class="w-full p-3 rounded-xl mt-2 outline-none">
+    <select id="catInput" class="w-full p-3 rounded-xl mt-2"><option>AMV</option><option>Edit</option><option>Meme</option><option>Fan Art</option></select>
+    <div id="progress" class="hidden mt-3"><div class="bg-gray-800 rounded-full h-2"><div id="bar" class="bg-purple-500 h-2 rounded-full" style="width:0%"></div></div><p id="progText" class="text-xs mt-1 text-center">Uploading...</p></div>
+    <button onclick="uploadVideo()" class="btn-purple w-full py-3 rounded-xl font-bold mt-4">🚀 POST VIDEO</button>
+  </div>
+</div>
+
+<script>
+const CLOUD_NAME = "ifovoszu";
+const UPLOAD_PRESET = "AnimTube_Upload";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA_Sa8bgukcuQp6ACG1wNY17OhsLbP6zBU",
+  authDomain: "chatindo-b9e65.firebaseapp.com",
+  databaseURL: "https://chatindo-b9e65-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "chatindo-b9e65",
+  storageBucket: "chatindo-b9e65.firebasestorage.app",
+  messagingSenderId: "198013276302",
+  appId: "1:198013276302:web:ba2e6403cd93732f03f9df"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let currentCat = 'Semua';
+let allVideos = [];
+
+function setCat(c){ currentCat=c; document.querySelectorAll('.catBtn').forEach(b=>{b.classList.remove('bg-purple-600'); b.classList.add('bg-[#1a1233]')}); event.target.classList.add('bg-purple-600'); renderVideos(); }
+function closeModal(){ document.getElementById('uploadModal').classList.add('hidden'); }
+
+db.collection("animtube_videos").orderBy("createdAt","desc").onSnapshot(snap=>{
+  allVideos = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  renderVideos();
+});
+
+function renderVideos(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const feed = document.getElementById('feed');
+  let filtered = allVideos.filter(v=>{
+    let okCat = currentCat==='Semua' || v.category===currentCat;
+    let okSearch = (v.title||'').toLowerCase().includes(q);
+    return okCat && okSearch;
+  });
+  document.getElementById('empty').classList.toggle('hidden', filtered.length>0);
+  feed.innerHTML = filtered.map(v=>`
+    <div class="card">
+      <video src="${v.videoUrl}" controls playsinline class="w-full aspect-[9/16] object-cover bg-black" poster="${v.videoUrl.replace('/upload/','/upload/so_0/').replace('.mp4','.jpg')}"></video>
+      <div class="p-3">
+        <div class="flex gap-2 items-start"><div class="w-9 h-9 bg-purple-600 rounded-full flex items-center justify-center font-bold shrink-0">${(v.username||'A')[0].toUpperCase()}</div><div><p class="font-bold text-sm leading-tight">${v.title||'Tanpa Judul'}</p><p class="text-xs text-gray-400">@${v.username||'Anon'} • ${v.category||''}</p></div></div>
+        <div class="flex gap-4 mt-3 text-sm">
+          <button onclick="likeVideo('${v.id}',${v.likes||0})">❤️ ${v.likes||0}</button>
+          <button onclick="toggleComment('${v.id}')">💬 Komen</button>
+          <button onclick="navigator.clipboard.writeText('${v.videoUrl}');alert('Link disalin!')">🔗 Share</button>
+        </div>
+        <div id="c-${v.id}" class="hidden mt-3">
+          <input id="ci-${v.id}" placeholder="Tulis komen..." class="w-full p-2 rounded-lg text-sm outline-none">
+          <button onclick="sendComment('${v.id}')" class="bg-purple-600 px-3 py-1.5 rounded-lg text-xs mt-2 font-bold">Kirim</button>
+          <div class="mt-2 space-y-1 text-xs">${(v.comments||[]).map(c=>`<p class="bg-black/30 p-2 rounded-lg"><b>${c.user}:</b> ${c.text}</p>`).join('')}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function likeVideo(id, cur){ await db.collection("animtube_videos").doc(id).update({likes: cur+1}); }
+function toggleComment(id){ document.getElementById('c-'+id).classList.toggle('hidden'); }
+async function sendComment(id){
+  let inp = document.getElementById('ci-'+id);
+  if(!inp.value) return;
+  let doc = await db.collection("animtube_videos").doc(id).get();
+  let comments = doc.data().comments||[];
+  comments.push({user: localStorage.getItem('animtube_user')||'Anon', text: inp.value});
+  await db.collection("animtube_videos").doc(id).update({comments});
+  inp.value='';
+}
+
+async function uploadVideo(){
+  let file = document.getElementById('videoFile').files[0];
+  let title = document.getElementById('titleInput').value || 'Video AnimTube';
+  let user = document.getElementById('userInput').value || 'Anon';
+  let cat = document.getElementById('catInput').value;
+  if(!file) return alert('Pilih video dulu!');
+  if(file.size > 20*1024*1024) return alert('Video kegedean! Max 20MB biar irit Cloudinary');
+  localStorage.setItem('animtube_user', user);
+  document.getElementById('progress').classList.remove('hidden');
+  document.getElementById('progText').innerText = 'Upload ke Cloudinary...';
+  let fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', UPLOAD_PRESET);
+  let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, {method:'POST', body:fd});
+  let data = await res.json();
+  if(!data.secure_url) return alert('Gagal upload! Cek preset AnimTube_Upload udah Unsigned belum. Error: ' + JSON.stringify(data));
+  document.getElementById('progText').innerText = 'Simpan ke Firebase...';
+  await db.collection("animtube_videos").add({
+    title, username: user, category: cat,
+    videoUrl: data.secure_url,
+    likes: 0, comments: [],
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  alert('Berhasil Upload! 🔥');
+  closeModal();
+  document.getElementById('progress').classList.add('hidden');
+}
+</script>
+</body>
+</html>

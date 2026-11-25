@@ -16,28 +16,50 @@ body{background:#fff;color:#0f0f0f;font-family:Roboto,Arial,sans-serif;padding-b
 .bottom-nav button{display:flex;flex-direction:column;align-items:center;font-size:10px;gap:1px}
 .bottom-nav .active{font-weight:700}
 input,textarea,select{background:#f2f2f2!important;border:none!important;color:#000!important}
-.video-card video{width:100%;aspect-ratio:16/9;object-fit:cover;background:#000;border-radius:12px}
-.shorts-card video{aspect-ratio:9/16}
+.owner-badge{background:#FFD700;color:#000;font-size:10px;padding:2px 6px;border-radius:20px;font-weight:800}
 </style>
 </head>
 <body>
 
-<!-- HEADER KAYA YOUTUBE -->
+<!-- HEADER -->
 <div class="sticky top-0 z-50 bg-white px-3 py-2 flex items-center justify-between">
   <div class="flex items-center gap-1" onclick="showPage('home')">
     <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white text-sm">▶</div>
     <b class="text-[20px] tracking-tighter">Anim<span class="font-normal">Tube</span></b>
   </div>
-  <div class="flex items-center gap-4 text-xl">
-    <span>🔔<sup class="bg-red-600 text-white text-[10px] px-1 rounded-full -ml-1">9+</sup></span>
+  <div class="flex items-center gap-3 text-xl">
+    <span>🔔</span>
     <span onclick="document.getElementById('searchBar').classList.toggle('hidden')">🔍</span>
-    <span onclick="showPage('anda')">⚙️</span>
+    <span id="headerAvatar" onclick="handleAvatarClick()" class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer">👤</span>
+  </div>
+</div>
+<div id="searchBar" class="hidden px-3 pb-2"><input id="searchInput" oninput="renderVideos()" placeholder="Cari di AnimTube..." class="w-full p-3 rounded-full outline-none"></div>
+
+<!-- LOGIN / DAFTAR MODAL - LOGIN TUBE -->
+<div id="authModal" class="fixed inset-0 z-[120] bg-white flex flex-col hidden">
+  <div class="flex items-center gap-3 p-4 border-b"><div class="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center text-white">▶</div><b class="text-xl">Anim<span class="font-normal">Tube</span></b><button onclick="closeAuth()" class="ml-auto text-2xl">×</button></div>
+  <div class="p-5">
+    <h2 id="authTitle" class="text-2xl font-bold">Login Tube</h2>
+    <p class="text-sm text-gray-500 mt-1">Masuk untuk upload, like, dan komen.</p>
+    <div id="loginForm" class="mt-5 space-y-3">
+      <input id="loginEmail" placeholder="Email atau Username" class="w-full p-3.5 rounded-lg outline-none">
+      <input id="loginPw" type="password" placeholder="Password" class="w-full p-3.5 rounded-lg outline-none">
+      <button onclick="doLogin()" class="bg-black text-white w-full py-3.5 rounded-full font-bold">Masuk</button>
+      <p class="text-center text-sm">Gapunya akun? <b class="text-blue-600 cursor-pointer" onclick="switchAuth('register')">Daftar</b></p>
+      <div class="bg-yellow-100 p-3 rounded-xl text-xs"><b>Akun Owner:</b><br>Username: arcowner<br>Password: Arka12345<br><button onclick="fillOwner()" class="bg-black text-white px-3 py-1 rounded-full mt-2 text-xs">Isi Otomatis Owner</button></div>
+    </div>
+    <div id="registerForm" class="mt-5 space-y-3 hidden">
+      <input id="regName" placeholder="Nama Channel" class="w-full p-3.5 rounded-lg outline-none">
+      <input id="regEmail" placeholder="Email" class="w-full p-3.5 rounded-lg outline-none">
+      <input id="regUser" placeholder="Username (tanpa @)" class="w-full p-3.5 rounded-lg outline-none">
+      <input id="regPw" type="password" placeholder="Password (min 6)" class="w-full p-3.5 rounded-lg outline-none">
+      <button onclick="doRegister()" class="bg-red-600 text-white w-full py-3.5 rounded-full font-bold">Daftar & Buat Akun</button>
+      <p class="text-center text-sm">Udah punya akun? <b class="text-blue-600 cursor-pointer" onclick="switchAuth('login')">Login</b></p>
+    </div>
   </div>
 </div>
 
-<div id="searchBar" class="hidden px-3 pb-2"><input id="searchInput" oninput="renderVideos()" placeholder="Cari di AnimTube..." class="w-full p-3 rounded-full outline-none"></div>
-
-<!-- KATEGORI KAYA YOUTUBE -->
+<!-- HOME -->
 <div id="homePage">
   <div class="flex gap-2 px-3 overflow-x-auto hide-scroll pb-2">
     <span class="chip">🧭</span>
@@ -46,213 +68,222 @@ input,textarea,select{background:#f2f2f2!important;border:none!important;color:#
     <button onclick="setCat('Edit',this)" class="chip">Edit</button>
     <button onclick="setCat('Meme',this)" class="chip">Meme</button>
     <button onclick="setCat('Fan Art',this)" class="chip">Fan Art</button>
-    <button onclick="setCat('Diviralkan',this)" class="chip">Diviralkan</button>
     <button onclick="setCat('Game',this)" class="chip">Game</button>
     <button onclick="setCat('Musik',this)" class="chip">Musik</button>
   </div>
-  <p class="px-3 text-[13px]"><b>Bersponsor</b> • 4,1★ &nbsp; GRATIS</p>
-
-  <!-- VIDEO PANJANG STYLE YOUTUBE -->
-  <div id="feed" class="px-3 mt-3 space-y-5"></div>
-  <div id="empty" class="hidden text-center py-20 text-gray-500">Belum ada video.<br>Jadi yang pertama upload!</div>
-
-  <!-- SHORTS SECTION -->
-  <div class="mt-6 px-3">
-    <div class="flex justify-between items-center"><div class="flex items-center gap-2"><span class="text-2xl text-red-600">⚡</span><b class="text-lg">Shorts</b></div><span>⋮</span></div>
-    <div id="shortsFeed" class="grid grid-cols-2 gap-3 mt-3"></div>
-  </div>
+  <div id="feed" class="px-3 mt-2 space-y-5"></div>
+  <div id="empty" class="hidden text-center py-20 text-gray-500">Belum ada video.<br>Login dulu terus jadi yang pertama upload!</div>
+  <div class="mt-6 px-3"><div class="flex items-center gap-2"><span class="text-2xl text-red-600">⚡</span><b class="text-lg">Shorts</b></div><div id="shortsFeed" class="grid grid-cols-2 gap-3 mt-3"></div></div>
 </div>
 
-<!-- HALAMAN SHORTS -->
-<div id="shortsPage" class="hidden px-3">
-  <h2 class="font-bold text-lg mb-3">Shorts AnimTube</h2>
-  <div id="shortsFeed2" class="grid grid-cols-2 gap-3"></div>
-</div>
+<div id="shortsPage" class="hidden px-3"><h2 class="font-bold text-lg mb-3">Shorts AnimTube</h2><div id="shortsFeed2" class="grid grid-cols-2 gap-3"></div></div>
+<div id="subsPage" class="hidden px-3"><h2 class="font-bold text-lg">Subscription</h2><p class="text-sm text-gray-500">Channel yang kamu subscribe.</p><div id="subsList" class="mt-4 space-y-3"></div></div>
 
-<!-- HALAMAN SUBSCRIPTION -->
-<div id="subsPage" class="hidden px-3">
-  <h2 class="font-bold text-lg">Subscription</h2>
-  <p class="text-sm text-gray-500 mt-2">Channel yang kamu ikuti bakal muncul di sini.</p>
-  <div class="flex gap-3 mt-4 overflow-x-auto hide-scroll">
-    <div class="text-center shrink-0"><div class="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">A</div><p class="text-xs mt-1">AnimTube</p></div>
-    <div class="text-center shrink-0"><div class="w-14 h-14 bg-black rounded-full flex items-center justify-center text-white font-bold">J</div><p class="text-xs mt-1">JANDRO</p></div>
-  </div>
-</div>
-
-<!-- HALAMAN ANDA / CHANNEL - MIRIP SCREENSHOT LU -->
+<!-- ANDA - ASLI -->
 <div id="andaPage" class="hidden px-3">
   <div class="flex items-center gap-3">
-    <div class="w-[70px] h-[70px] bg-black rounded-full flex items-center justify-center overflow-hidden shrink-0"><span class="text-3xl">🎬</span></div>
-    <div>
-      <h2 id="myName" class="font-bold text-[22px] leading-none">Kamu</h2>
-      <p class="text-sm text-gray-600 mt-1">@<span id="myHandle">animtube_user</span> • Lihat channel ›</p>
-    </div>
+    <div id="myAvatarBig" class="w-[70px] h-[70px] bg-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shrink-0">?</div>
+    <div><h2 id="myName" class="font-bold text-[22px]">Belum Login</h2><p class="text-sm text-gray-600">@<span id="myHandle">login dulu</span> • <span id="myEmail"></span></p><p id="myRole" class="text-xs"></p></div>
   </div>
   <div class="flex gap-2 mt-4 overflow-x-auto hide-scroll">
-    <button class="bg-[#f2f2f2] px-3 py-2 rounded-full text-sm whitespace-nowrap">👤 Ganti akun</button>
-    <button class="bg-[#f2f2f2] px-3 py-2 rounded-full text-sm whitespace-nowrap">G Akun Google</button>
-    <button class="bg-[#f2f2f2] px-3 py-2 rounded-full text-sm whitespace-nowrap">🌙 Aktifkan Mode Gelap</button>
+    <button onclick="handleAvatarClick()" class="bg-[#f2f2f2] px-3 py-2 rounded-full text-sm whitespace-nowrap">👤 Ganti akun</button>
+    <button onclick="doLogout()" class="bg-red-100 px-3 py-2 rounded-full text-sm whitespace-nowrap">🚪 Logout</button>
+    <button onclick="toggleDark()" class="bg-[#f2f2f2] px-3 py-2 rounded-full text-sm whitespace-nowrap">🌙 Mode Gelap</button>
   </div>
-
-  <h3 class="font-bold text-lg mt-6 flex justify-between">Histori <span>›</span></h3>
-  <div id="historyList" class="flex gap-3 overflow-x-auto hide-scroll mt-2"></div>
-
-  <h3 class="font-bold text-lg mt-6 flex justify-between">Playlist <span>+</span></h3>
-  <div class="flex gap-3 overflow-x-auto hide-scroll mt-2">
-    <div class="shrink-0 w-[160px]"><div class="bg-gray-200 h-[90px] rounded-lg flex items-center justify-center">👍 1.100</div><p class="text-sm font-medium mt-1">Video yang disukai</p><p class="text-xs text-gray-500">Pribadi</p></div>
-    <div class="shrink-0 w-[160px]"><div class="bg-gray-200 h-[90px] rounded-lg flex items-center justify-center">⚡ 4</div><p class="text-sm font-medium mt-1">Video Shorts Tersimpan</p><p class="text-xs text-gray-500">Pribadi</p></div>
+  <h3 class="font-bold text-lg mt-6">Histori (Asli)</h3><div id="historyList" class="flex gap-3 overflow-x-auto hide-scroll mt-2"></div>
+  <h3 class="font-bold text-lg mt-6">Playlist (Asli)</h3><div class="flex gap-3 overflow-x-auto hide-scroll mt-2">
+    <div onclick="showLiked()" class="shrink-0 w-[160px] cursor-pointer"><div class="bg-gray-200 h-[90px] rounded-lg flex items-center justify-center text-2xl">👍 <span id="likedCount">0</span></div><p class="text-sm font-medium mt-1">Video yang disukai</p><p class="text-xs text-gray-500">Pribadi</p></div>
+    <div class="shrink-0 w-[160px]"><div class="bg-gray-200 h-[90px] rounded-lg flex items-center justify-center">⚡ <span id="myVideoCount">0</span></div><p class="text-sm font-medium mt-1">Video Kamu</p><p class="text-xs text-gray-500">Pribadi</p></div>
   </div>
-
-  <!-- EDIT CHANNEL -->
-  <div class="mt-6 border-t pt-4">
-    <h3 class="font-bold text-lg">Edit channel</h3>
-    <label class="text-sm text-gray-600">Nama</label><input id="editName" class="w-full p-3 rounded-lg mt-1 mb-2" placeholder="Nama channel kamu">
-    <label class="text-sm text-gray-600">Handle</label><input id="editHandle" class="w-full p-3 rounded-lg mt-1 mb-2" placeholder="@namakamu">
-    <label class="text-sm text-gray-600">Deskripsi</label><textarea id="editDesc" class="w-full p-3 rounded-lg mt-1" placeholder="Animasi Series Indonesia Genk!"></textarea>
-    <button onclick="saveChannel()" class="bg-black text-white w-full py-3 rounded-full font-bold mt-3">Simpan Channel</button>
-  </div>
+  <div class="mt-6 border-t pt-4"><h3 class="font-bold text-lg">Edit channel (Asli)</h3><input id="editName" class="w-full p-3 rounded-lg mt-2 mb-2" placeholder="Nama channel"><input id="editHandle" class="w-full p-3 rounded-lg mb-2" placeholder="@username"><textarea id="editDesc" class="w-full p-3 rounded-lg" placeholder="Deskripsi channel"></textarea><button onclick="saveChannel()" class="bg-black text-white w-full py-3 rounded-full font-bold mt-3">Simpan Channel</button></div>
+  <div id="ownerPanel" class="hidden mt-6 border-2 border-yellow-400 rounded-2xl p-4 bg-yellow-50"><h3 class="font-bold">👑 PANEL OWNER</h3><p class="text-sm">Kamu login sebagai OWNER. Kamu bisa hapus video siapa pun.</p><p class="text-xs mt-2">Total User: <span id="totalUser">0</span> • Total Video: <span id="totalVideo">0</span></p></div>
 </div>
 
-<!-- BOTTOM NAV KAYA YOUTUBE -->
 <div class="bottom-nav">
   <button id="nav-home" onclick="showPage('home')" class="active"><span class="text-[22px]">🏠</span>Beranda</button>
   <button id="nav-shorts" onclick="showPage('shorts')"><span class="text-[22px]">⚡</span>Shorts</button>
-  <button onclick="document.getElementById('uploadModal').classList.remove('hidden')"><span class="text-[28px] bg-[#f2f2f2] w-10 h-10 flex items-center justify-center rounded-full">+</span></button>
+  <button onclick="checkUpload()"><span class="text-[28px] bg-[#f2f2f2] w-10 h-10 flex items-center justify-center rounded-full">+</span></button>
   <button id="nav-subs" onclick="showPage('subs')"><span class="text-[22px]">📺</span>Subscription</button>
   <button id="nav-anda" onclick="showPage('anda')"><span class="text-[22px]">👤</span>Anda</button>
 </div>
 
-<!-- MODAL UPLOAD - STYLE TAMBAHKAN DETAIL YOUTUBE -->
+<!-- UPLOAD MODAL -->
 <div id="uploadModal" class="hidden fixed inset-0 z-[100] bg-white flex flex-col">
   <div class="flex items-center gap-4 p-3 border-b"><button onclick="closeModal()" class="text-2xl">←</button><b class="text-lg">Tambahkan detail</b></div>
   <div class="p-3 overflow-y-auto pb-10">
-    <label class="block border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center cursor-pointer">
-      <span id="fileLabel">📁 Pilih Video<br><small class="text-gray-500">Video / Shorts • Max 50MB</small></span>
-      <input type="file" id="videoFile" accept="video/*" class="hidden" onchange="onFilePick(this)">
-    </label>
+    <label class="block border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center cursor-pointer"><span id="fileLabel">📁 Pilih Video<br><small class="text-gray-500">Max 50MB • Auto Kompres 480p</small></span><input type="file" id="videoFile" accept="video/*" class="hidden" onchange="onFilePick(this)"></label>
     <p id="fileInfo" class="text-xs text-orange-600 mt-2"></p>
-    <input id="titleInput" placeholder="Tambahkan teks pada video Shorts / Judul..." class="w-full p-3 rounded-xl mt-3 outline-none">
-    <input id="userInput" placeholder="Nama kamu / @handle..." class="w-full p-3 rounded-xl mt-2 outline-none">
+    <input id="titleInput" placeholder="Judul video..." class="w-full p-3 rounded-xl mt-3 outline-none">
     <select id="catInput" class="w-full p-3 rounded-xl mt-2"><option>AMV</option><option>Edit</option><option>Meme</option><option>Fan Art</option><option>Game</option><option>Musik</option></select>
-    <div class="mt-4 space-y-3 text-sm">
-      <div class="flex justify-between border-b pb-3"><span>🌐 Visibilitas<br><b>Publik</b></span><span>›</span></div>
-      <div class="flex justify-between border-b pb-3"><span>📍 Lokasi</span><span>›</span></div>
-      <div class="flex justify-between border-b pb-3"><span>👥 Pilih audiens</span><span>›</span></div>
-    </div>
-    <div id="progress" class="hidden mt-4">
-      <div class="flex justify-between text-xs mb-1"><span id="progPercent">0%</span><span id="progSpeed"></span></div>
-      <div class="bg-gray-200 rounded-full h-3 overflow-hidden"><div id="bar" class="bg-red-600 h-3 rounded-full" style="width:0%"></div></div>
-      <p id="progText" class="text-xs mt-2 text-center">Menyiapkan...</p><p id="progEta" class="text-[11px] text-center text-gray-500"></p>
-    </div>
+    <div class="mt-3 flex gap-2"><button onclick="toggleCompress()" id="compressBtn" class="flex-1 bg-green-100 py-2 rounded-full text-sm font-bold">✅ Kompres Otomatis: ON</button></div>
+    <div id="progress" class="hidden mt-4"><div class="flex justify-between text-xs mb-1"><span id="progPercent">0%</span><span id="progSpeed"></span></div><div class="bg-gray-200 rounded-full h-3 overflow-hidden"><div id="bar" class="bg-red-600 h-3 rounded-full" style="width:0%"></div></div><p id="progText" class="text-xs mt-2 text-center">Menyiapkan...</p><p id="progEta" class="text-[11px] text-center text-gray-500"></p></div>
     <button id="uploadBtn" onclick="uploadVideo()" class="bg-black text-white w-full py-3.5 rounded-full font-bold mt-5">Upload video Shorts</button>
   </div>
 </div>
 
-<!-- MODAL PILIH VIDEO DARI GALERI KAYA YOUTUBE -->
-<div id="galleryModal" class="hidden fixed inset-0 z-[90] bg-black flex flex-col">
-  <div class="flex justify-between p-3 text-white"><span>Video ⌄</span><button onclick="document.getElementById('galleryModal').classList.add('hidden')" class="text-2xl">×</button></div>
-  <p class="text-white/60 text-xs px-3 pb-2">Pilih dari galeri HP kamu, atau pencet + di bawah untuk upload baru</p>
-  <div class="grid grid-cols-3 gap-1 flex-1 overflow-y-auto" id="galleryGrid"></div>
-  <div class="flex justify-center gap-6 p-3 bg-black"><button class="bg-white text-black px-6 py-2 rounded-full">Video</button><button class="text-white/70">Video Shorts</button></div>
-</div>
-
 <script>
-const CLOUD_NAME = "ifovoszu";
-const UPLOAD_PRESET = "AnimTube_Upload";
-const firebaseConfig = {
-  apiKey: "AIzaSyA_Sa8bgukcuQp6ACG1wNY17OhsLbP6zBU",
-  authDomain: "chatindo-b9e65.firebaseapp.com",
-  databaseURL: "https://chatindo-b9e65-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "chatindo-b9e65",
-  storageBucket: "chatindo-b9e65.firebasestorage.app",
-  messagingSenderId: "198013276302",
-  appId: "1:198013276302:web:ba2e6403cd93732f03f9df"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-let currentCat='Semua'; let allVideos=[]; let pickedFile=null;
+const CLOUD_NAME="ifovoszu"; const UPLOAD_PRESET="AnimTube_Upload";
+const firebaseConfig={apiKey:"AIzaSyA_Sa8bgukcuQp6ACG1wNY17OhsLbP6zBU",authDomain:"chatindo-b9e65.firebaseapp.com",databaseURL:"https://chatindo-b9e65-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"chatindo-b9e65",storageBucket:"chatindo-b9e65.firebasestorage.app",messagingSenderId:"198013276302",appId:"1:198013276302:web:ba2e6403cd93732f03f9df"};
+firebase.initializeApp(firebaseConfig); const db=firebase.firestore();
+let currentCat='Semua', allVideos=[], pickedFile=null, compressOn=true, currentUser=null;
 
-function showPage(p){
-  ['home','shorts','subs','anda'].forEach(x=>document.getElementById(x+'Page').classList.add('hidden'));
-  document.getElementById(p+'Page').classList.remove('hidden');
-  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
-  let map={home:'nav-home',shorts:'nav-shorts',subs:'nav-subs',anda:'nav-anda'};
-  if(map[p]) document.getElementById(map[p]).classList.add('active');
-  window.scrollTo(0,0);
+// === AUTH ASLI - LOCALSTORAGE + OWNER ===
+function getUsers(){ return JSON.parse(localStorage.getItem('animtube_users')||'[]'); }
+function saveUsers(u){ localStorage.setItem('animtube_users', JSON.stringify(u)); }
+function initOwner(){
+  let users=getUsers();
+  if(!users.find(u=>u.username==='arcowner')){
+    users.push({name:'Arka Owner', email:'arcowner@animtube.id', username:'arcowner', password:'Arka12345', role:'owner', desc:'Owner AnimTube'});
+    saveUsers(users);
+  }
 }
+initOwner();
+function loadSession(){ let s=localStorage.getItem('animtube_session'); if(s){ currentUser=JSON.parse(s); updateUIUser(); } }
+loadSession();
+function updateUIUser(){
+  if(!currentUser) return;
+  document.getElementById('myName').innerText=currentUser.name;
+  document.getElementById('myHandle').innerText=currentUser.username;
+  document.getElementById('myEmail').innerText=currentUser.email;
+  document.getElementById('myRole').innerHTML=currentUser.role==='owner'?'<span class="owner-badge">👑 OWNER</span>':'<span class="text-gray-500">Member</span>';
+  document.getElementById('headerAvatar').innerText=currentUser.name[0].toUpperCase();
+  document.getElementById('myAvatarBig').innerText=currentUser.name[0].toUpperCase();
+  document.getElementById('ownerPanel').classList.toggle('hidden', currentUser.role!=='owner');
+  document.getElementById('totalUser').innerText=getUsers().length;
+  document.getElementById('editName').value=currentUser.name; document.getElementById('editHandle').value='@'+currentUser.username; document.getElementById('editDesc').value=currentUser.desc||'';
+}
+function handleAvatarClick(){ if(currentUser){ showPage('anda'); } else { document.getElementById('authModal').classList.remove('hidden'); } }
+function closeAuth(){ document.getElementById('authModal').classList.add('hidden'); }
+function switchAuth(t){ document.getElementById('loginForm').classList.toggle('hidden', t!=='login'); document.getElementById('registerForm').classList.toggle('hidden', t!=='register'); document.getElementById('authTitle').innerText=t==='login'?'Login Tube':'Daftar Tube'; }
+function fillOwner(){ document.getElementById('loginEmail').value='arcowner'; document.getElementById('loginPw').value='Arka12345'; }
+function doLogin(){
+  let id=document.getElementById('loginEmail').value.trim(); let pw=document.getElementById('loginPw').value;
+  if(!id||!pw) return alert('Isi email/username + password dulu!');
+  let user=getUsers().find(u=>(u.email===id||u.username===id)&&u.password===pw);
+  if(!user) return alert('Email/Username atau Password SALAH! Coba Daftar dulu kalo belum punya.');
+  currentUser=user; localStorage.setItem('animtube_session', JSON.stringify(user)); updateUIUser(); closeAuth(); alert('Selamat datang, '+user.name+'! '+(user.role==='owner'?'👑 OWNER MODE AKTIF':''));
+  showPage('home');
+}
+function doRegister(){
+  let name=document.getElementById('regName').value.trim(); let email=document.getElementById('regEmail').value.trim(); let user=document.getElementById('regUser').value.trim().replace('@',''); let pw=document.getElementById('regPw').value;
+  if(!name||!email||!user||!pw) return alert('Isi semua!');
+  if(pw.length<6) return alert('Password min 6 karakter!');
+  let users=getUsers();
+  if(users.find(u=>u.email===email)) return alert('Email udah dipake!');
+  if(users.find(u=>u.username===user)) return alert('Username udah dipake!');
+  let newUser={name,email,username:user,password:pw,role:'user',desc:''};
+  users.push(newUser); saveUsers(users); currentUser=newUser; localStorage.setItem('animtube_session', JSON.stringify(newUser)); updateUIUser(); closeAuth(); alert('Akun berhasil dibuat! Selamat datang '+name);
+}
+function doLogout(){ localStorage.removeItem('animtube_session'); currentUser=null; location.reload(); }
+function saveChannel(){
+  if(!currentUser) return alert('Login dulu!');
+  let n=document.getElementById('editName').value; let h=document.getElementById('editHandle').value.replace('@','');
+  let users=getUsers(); let idx=users.findIndex(u=>u.username===currentUser.username);
+  users[idx].name=n||users[idx].name; users[idx].username=h||users[idx].username; users[idx].desc=document.getElementById('editDesc').value;
+  saveUsers(users); currentUser=users[idx]; localStorage.setItem('animtube_session', JSON.stringify(currentUser)); updateUIUser(); alert('Channel disimpan! ✅');
+}
+function toggleDark(){ document.body.style.background=document.body.style.background==='black'?'#fff':'black'; document.body.style.color=document.body.style.color==='#fff'?'#0f0f0f':'#fff'; }
+
+// === VIDEO ASLI FIREBASE ===
+function showPage(p){ ['home','shorts','subs','anda'].forEach(x=>document.getElementById(x+'Page').classList.add('hidden')); document.getElementById(p+'Page').classList.remove('hidden'); document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active')); let m={home:'nav-home',shorts:'nav-shorts',subs:'nav-subs',anda:'nav-anda'}; if(m[p]) document.getElementById(m[p]).classList.add('active'); window.scrollTo(0,0); if(p==='subs') renderSubs(); }
 function setCat(c,el){ currentCat=c; document.querySelectorAll('.chip').forEach(b=>b.classList.remove('active')); if(el) el.classList.add('active'); renderVideos(); }
 function closeModal(){ document.getElementById('uploadModal').classList.add('hidden'); }
+function checkUpload(){ if(!currentUser){ alert('Login dulu buat upload!'); document.getElementById('authModal').classList.remove('hidden'); return; } document.getElementById('uploadModal').classList.remove('hidden'); }
 function formatMB(b){ return (b/1024/1024).toFixed(1)+' MB'; }
 function formatSpeed(bps){ if(bps>1024*1024) return (bps/1024/1024).toFixed(2)+' MB/s'; if(bps>1024) return (bps/1024).toFixed(0)+' KB/s'; return bps.toFixed(0)+' B/s'; }
-function onFilePick(inp){ pickedFile=inp.files[0]; if(!pickedFile) return; document.getElementById('fileLabel').innerText=pickedFile.name; document.getElementById('fileInfo').innerText=`Ukuran: ${formatMB(pickedFile.size)} • ${pickedFile.size>20*1024*1024?'⚠️ Gede! Kompres via WA dulu biar cepet':'✅ Aman, bakal cepet!'}`; }
-function saveChannel(){
-  let n=document.getElementById('editName').value; let h=document.getElementById('editHandle').value;
-  if(n){ document.getElementById('myName').innerText=n; localStorage.setItem('animtube_name',n); }
-  if(h){ document.getElementById('myHandle').innerText=h.replace('@',''); localStorage.setItem('animtube_handle',h); }
-  alert('Channel disimpan! ✅');
-}
-if(localStorage.getItem('animtube_name')) document.getElementById('myName').innerText=localStorage.getItem('animtube_name');
+function onFilePick(inp){ pickedFile=inp.files[0]; if(!pickedFile) return; document.getElementById('fileLabel').innerText=pickedFile.name; document.getElementById('fileInfo').innerText=`Ukuran: ${formatMB(pickedFile.size)} • ${pickedFile.size>5*1024*1024?'Akan di kompres otomatis jadi kecil':'✅ Aman'}`; }
+function toggleCompress(){ compressOn=!compressOn; document.getElementById('compressBtn').innerText=compressOn?'✅ Kompres Otomatis: ON':'❌ Kompres Otomatis: OFF'; }
+function timeAgo(ts){ if(!ts) return 'Baru saja'; let s=Math.floor((Date.now()-ts.toMillis())/1000); if(s<60) return s+' detik lalu'; if(s<3600) return Math.floor(s/60)+' menit lalu'; if(s<86400) return Math.floor(s/3600)+' jam lalu'; return Math.floor(s/86400)+' hari lalu'; }
 
-db.collection("animtube_videos").orderBy("createdAt","desc").onSnapshot(snap=>{
-  allVideos=snap.docs.map(d=>({id:d.id,...d.data()})); renderVideos();
-});
+db.collection("animtube_videos").orderBy("createdAt","desc").onSnapshot(snap=>{ allVideos=snap.docs.map(d=>({id:d.id,...d.data()})); renderVideos(); document.getElementById('totalVideo').innerText=allVideos.length; });
 
-function timeAgo(ts){ if(!ts) return 'Baru saja'; let s=Math.floor((Date.now()-ts.toMillis())/1000); if(s<60) return s+' detik yang lalu'; if(s<3600) return Math.floor(s/60)+' menit yang lalu'; if(s<86400) return Math.floor(s/3600)+' jam yang lalu'; return Math.floor(s/86400)+' hari yang lalu'; }
+function addHistory(v){ if(!currentUser) return; let h=JSON.parse(localStorage.getItem('animtube_history_'+currentUser.username)||'[]'); h=h.filter(x=>x.id!==v.id); h.unshift({id:v.id,title:v.title,videoUrl:v.videoUrl,likes:v.likes}); localStorage.setItem('animtube_history_'+currentUser.username, JSON.stringify(h.slice(0,20))); }
+function getLiked(){ return JSON.parse(localStorage.getItem('animtube_liked_'+(currentUser?.username||'guest'))||'[]'); }
 
 function renderVideos(){
   const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
   let filtered=allVideos.filter(v=>{ let okCat=currentCat==='Semua'||v.category===currentCat; let okSearch=(v.title||'').toLowerCase().includes(q); return okCat&&okSearch; });
   document.getElementById('empty').classList.toggle('hidden', filtered.length>0);
-  // Feed panjang kaya YouTube screenshot 1
   document.getElementById('feed').innerHTML=filtered.map(v=>`
     <div>
-      <video src="${v.videoUrl}" controls playsinline preload="metadata" class="w-full rounded-xl"></video>
-      <div class="flex gap-2 mt-2">
-        <div class="w-9 h-9 bg-red-600 rounded-full flex items-center justify-center text-white font-bold shrink-0">${(v.username||'A')[0].toUpperCase()}</div>
-        <div class="flex-1"><p class="font-medium text-[15px] leading-tight">${v.title||'Tanpa Judul'}</p><p class="text-[13px] text-gray-600">${v.username||'Anon'} • ${v.likes||0} x ditonton • ${timeAgo(v.createdAt)}</p></div>
-        <span>⋮</span>
-      </div>
-      <div class="flex gap-4 mt-2 text-sm px-11">
+      <video src="${v.videoUrl}" controls playsinline preload="metadata" onclick="addHistory(${JSON.stringify(v).replace(/"/g,'&quot;')})" class="w-full rounded-xl aspect-video object-cover bg-black"></video>
+      <div class="flex gap-2 mt-2"><div class="w-9 h-9 bg-red-600 rounded-full flex items-center justify-center text-white font-bold shrink-0">${(v.username||'A')[0].toUpperCase()}</div><div class="flex-1"><p class="font-medium text-[15px] leading-tight">${v.title||''} ${v.username==='arcowner'?'<span class="owner-badge">👑 OWNER</span>':''}</p><p class="text-[13px] text-gray-600">${v.username||''} • ${v.likes||0} ditonton • ${timeAgo(v.createdAt)}</p></div><span onclick="showVideoMenu('${v.id}')">⋮</span></div>
+      <div class="flex gap-3 mt-2 text-sm px-11 flex-wrap">
         <button onclick="likeVideo('${v.id}',${v.likes||0})">👍 ${v.likes||0}</button>
-        <button onclick="toggleComment('${v.id}')">💬 Komen</button>
-        <button onclick="navigator.clipboard.writeText('${v.videoUrl}');alert('Link disalin!')">↗️ Share</button>
+        <button onclick="toggleComment('${v.id}')">💬 ${(v.comments||[]).length}</button>
+        <button onclick="shareVideo('${v.videoUrl}')">↗️ Share</button>
+        <button onclick="subscribe('${v.username}')">🔔 Sub</button>
+        ${(currentUser?.role==='owner'||currentUser?.username===v.username)?`<button onclick="deleteVideo('${v.id}')" class="text-red-600 font-bold">🗑️ Hapus</button>`:''}
       </div>
-      <div id="c-${v.id}" class="hidden mt-2 ml-11"><input id="ci-${v.id}" placeholder="Tulis komen..." class="w-full p-2 rounded-lg text-sm"><button onclick="sendComment('${v.id}')" class="bg-black text-white px-3 py-1.5 rounded-full text-xs mt-2">Kirim</button><div class="mt-2 space-y-1 text-xs">${(v.comments||[]).map(c=>`<p class="bg-gray-100 p-2 rounded-lg"><b>${c.user}:</b> ${c.text}</p>`).join('')}</div></div>
+      <div id="c-${v.id}" class="hidden mt-2 ml-11"><input id="ci-${v.id}" placeholder="Tulis komen sebagai ${currentUser?.name||'Guest'}..." class="w-full p-2 rounded-lg text-sm"><button onclick="sendComment('${v.id}')" class="bg-black text-white px-3 py-1.5 rounded-full text-xs mt-2">Kirim</button><div class="mt-2 space-y-1 text-xs">${(v.comments||[]).map(c=>`<p class="bg-gray-100 p-2 rounded-lg"><b>${c.user} ${c.isOwner?'<span class="owner-badge">👑</span>':''}:</b> ${c.text}</p>`).join('')}</div></div>
     </div>`).join('');
-  // Shorts grid
-  let shortsHtml=filtered.map(v=>`
-    <div class="shorts-card"><video src="${v.videoUrl}" controls playsinline preload="metadata" class="w-full rounded-xl"></video><p class="text-sm font-medium mt-1 line-clamp-2">${v.title||''}</p><p class="text-xs text-gray-500">${v.username||''} • ${v.likes||0} ditonton</p></div>`).join('');
-  document.getElementById('shortsFeed').innerHTML=shortsHtml;
-  document.getElementById('shortsFeed2').innerHTML=shortsHtml;
-  document.getElementById('historyList').innerHTML=filtered.slice(0,5).map(v=>`<div class="shrink-0 w-[160px]"><video src="${v.videoUrl}" class="w-full h-[90px] object-cover rounded-lg"></video><p class="text-sm mt-1">${v.title||''}</p><p class="text-xs text-gray-500">${v.likes||0} kali ditonton</p></div>`).join('') || '<p class="text-sm text-gray-500">Belum ada histori</p>';
+  let shortsHtml=filtered.map(v=>`<div><video src="${v.videoUrl}" controls playsinline preload="metadata" class="w-full rounded-xl aspect-[9/16] object-cover bg-black"></video><p class="text-sm font-medium mt-1">${v.title||''}</p><p class="text-xs text-gray-500">${v.username||''} • ${v.likes||0}</p></div>`).join('');
+  document.getElementById('shortsFeed').innerHTML=shortsHtml; document.getElementById('shortsFeed2').innerHTML=shortsHtml;
+  // Histori asli
+  if(currentUser){ let h=JSON.parse(localStorage.getItem('animtube_history_'+currentUser.username)||'[]'); document.getElementById('historyList').innerHTML=h.map(v=>`<div class="shrink-0 w-[160px]"><video src="${v.videoUrl}" class="w-full h-[90px] object-cover rounded-lg"></video><p class="text-sm mt-1">${v.title||''}</p></div>`).join('')||'<p class="text-sm text-gray-500">Belum ada histori. Tonton video dulu!</p>'; document.getElementById('myVideoCount').innerText=allVideos.filter(v=>v.username===currentUser.username).length; }
+  document.getElementById('likedCount').innerText=getLiked().length;
 }
-async function likeVideo(id,cur){ await db.collection("animtube_videos").doc(id).update({likes:cur+1}); }
-function toggleComment(id){ document.getElementById('c-'+id).classList.toggle('hidden'); }
-async function sendComment(id){ let inp=document.getElementById('ci-'+id); if(!inp.value) return; let doc=await db.collection("animtube_videos").doc(id).get(); let comments=doc.data().comments||[]; comments.push({user:localStorage.getItem('animtube_user')||'Anon',text:inp.value}); await db.collection("animtube_videos").doc(id).update({comments}); inp.value=''; }
+function showVideoMenu(id){ alert('Fitur: Share / Simpan / Laporkan - Pencet tombol di bawah video aja!'); }
+function shareVideo(url){ if(navigator.share) navigator.share({title:'AnimTube', url}); else { navigator.clipboard.writeText(url); alert('Link disalin!'); } }
+function subscribe(name){ if(!currentUser) return alert('Login dulu!'); let s=JSON.parse(localStorage.getItem('animtube_subs_'+currentUser.username)||'[]'); if(!s.includes(name)){ s.push(name); localStorage.setItem('animtube_subs_'+currentUser.username, JSON.stringify(s)); alert('Berhasil subscribe '+name+'! 🔔'); } else alert('Udah subscribe '+name); }
+function renderSubs(){ if(!currentUser) return document.getElementById('subsList').innerHTML='<p class="text-sm">Login dulu!</p>'; let s=JSON.parse(localStorage.getItem('animtube_subs_'+currentUser.username)||'[]'); document.getElementById('subsList').innerHTML=s.map(n=>`<div class="flex items-center gap-3"><div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">${n[0].toUpperCase()}</div><b>@${n}</b></div>`).join('')||'<p class="text-sm text-gray-500">Belum ada subscription</p>'; }
+function showLiked(){ alert('Video yang kamu like: '+getLiked().length+' video. Like tersimpan di akun kamu!'); }
 
+async function likeVideo(id,cur){
+  if(!currentUser) return alert('Login dulu buat like!');
+  let liked=getLiked(); let isLiked=liked.includes(id);
+  if(isLiked){ liked=liked.filter(x=>x!==id); await db.collection("animtube_videos").doc(id).update({likes:Math.max(0,cur-1)}); }
+  else { liked.push(id); await db.collection("animtube_videos").doc(id).update({likes:cur+1}); }
+  localStorage.setItem('animtube_liked_'+currentUser.username, JSON.stringify(liked));
+}
+function toggleComment(id){ document.getElementById('c-'+id).classList.toggle('hidden'); }
+async function sendComment(id){
+  if(!currentUser) return alert('Login dulu buat komen!');
+  let inp=document.getElementById('ci-'+id); if(!inp.value) return;
+  let doc=await db.collection("animtube_videos").doc(id).get(); let comments=doc.data().comments||[]; comments.push({user:currentUser.name, text:inp.value, isOwner:currentUser.role==='owner'});
+  await db.collection("animtube_videos").doc(id).update({comments}); inp.value='';
+}
+async function deleteVideo(id){
+  if(!confirm('Yakin hapus video ini? (Owner / Pemilik)')) return;
+  await db.collection("animtube_videos").doc(id).delete(); alert('Video dihapus!');
+}
+
+// === KOMPRES + UPLOAD CEPET ===
+async function kompresVideo(file){
+  return new Promise((resolve)=>{
+    document.getElementById('progText').innerText='Lagi kompres video di HP... (480p, biar kecil)';
+    let video=document.createElement('video'); video.src=URL.createObjectURL(file); video.muted=true; video.playsInline=true;
+    video.onloadedmetadata=()=>{
+      let canvas=document.createElement('canvas'); let scale=Math.min(1,480/video.videoWidth); canvas.width=video.videoWidth*scale; canvas.height=video.videoHeight*scale; let ctx=canvas.getContext('2d');
+      let stream=canvas.captureStream(30); let recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9', videoBitsPerSecond:500000});
+      let chunks=[]; recorder.ondataavailable=e=>chunks.push(e.data);
+      recorder.onstop=()=>{ let comp=new Blob(chunks,{type:'video/webm'}); alert(`Kompres berhasil!\nDari ${formatMB(file.size)} jadi ${formatMB(comp.size)}\nUpload jadi 5x lebih cepet!`); resolve(new File([comp],'animtube.webm',{type:'video/webm'})); };
+      video.play(); let draw=()=>{ if(video.ended||video.paused) return; ctx.drawImage(video,0,0,canvas.width,canvas.height); requestAnimationFrame(draw); }; draw(); recorder.start(); video.onended=()=>recorder.stop();
+    };
+  });
+}
 function uploadToCloudinary(file){
   return new Promise((resolve,reject)=>{
-    let fd=new FormData(); fd.append('file',file); fd.append('upload_preset',UPLOAD_PRESET); fd.append('chunk_size','6000000'); fd.append('eager','f_mp4,vc_h264,q_auto:good,w_720'); fd.append('eager_async','true');
+    let fd=new FormData(); fd.append('file',file); fd.append('upload_preset',UPLOAD_PRESET); fd.append('chunk_size','6000000');
     let xhr=new XMLHttpRequest(); let start=Date.now();
     xhr.open('POST',`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`);
     xhr.upload.onprogress=(e)=>{ if(e.lengthComputable){ let p=Math.round(e.loaded/e.total*100); let speed=e.loaded/((Date.now()-start)/1000); let eta=speed>0?Math.round((e.total-e.loaded)/speed):0; document.getElementById('bar').style.width=p+'%'; document.getElementById('progPercent').innerText=p+'% • '+formatMB(e.loaded)+' / '+formatMB(e.total); document.getElementById('progSpeed').innerText=formatSpeed(speed); document.getElementById('progText').innerText=p<100?'Uploading...':'Memproses...'; document.getElementById('progEta').innerText=p<100?`Sisa ~${eta} detik • Jangan tutup!`:'Hampir selesai...'; } };
     xhr.onload=()=>{ try{ let d=JSON.parse(xhr.responseText); if(d.secure_url) resolve(d); else reject(d); }catch(e){ reject({error:{message:'Gagal parse'}}); } };
-    xhr.onerror=()=>reject({error:{message:'Internet putus!'}});
-    xhr.send(fd);
+    xhr.onerror=()=>reject({error:{message:'Internet putus!'}}); xhr.send(fd);
   });
 }
 async function uploadVideo(){
   let file=pickedFile||document.getElementById('videoFile').files[0];
-  let title=document.getElementById('titleInput').value||'Video AnimTube';
-  let user=document.getElementById('userInput').value||'Anon';
-  let cat=document.getElementById('catInput').value;
-  if(!file) return alert('Pilih video dulu!');
+  let title=document.getElementById('titleInput').value||'Video AnimTube'; let cat=document.getElementById('catInput').value;
+  if(!file) return alert('Pilih video dulu!'); if(!currentUser) return alert('Login dulu!');
   if(file.size>50*1024*1024) return alert('Max 50MB!');
-  localStorage.setItem('animtube_user',user);
-  document.getElementById('progress').classList.remove('hidden');
-  document.getElementById('uploadBtn').innerText='⏳ SEDANG UPLOAD...'; document.getElementById('uploadBtn').disabled=true;
-  try{ let data=await uploadToCloudinary(file); document.getElementById('progText').innerText='Simpan ke Firebase...'; await db.collection("animtube_videos").add({title,username:user,category:cat,videoUrl:data.secure_url,likes:0,comments:[],createdAt:firebase.firestore.FieldValue.serverTimestamp()}); alert('Berhasil Upload! 🔥'); closeModal(); document.getElementById('progress').classList.add('hidden'); }
-  catch(err){ alert('GAGAL: '+(err.error?.message||JSON.stringify(err))); }
+  document.getElementById('progress').classList.remove('hidden'); document.getElementById('uploadBtn').innerText='⏳ SEDANG UPLOAD...'; document.getElementById('uploadBtn').disabled=true;
+  try{
+    if(compressOn && file.size>5*1024*1024) file=await kompresVideo(file);
+    let data=await uploadToCloudinary(file);
+    await db.collection("animtube_videos").add({title, username:currentUser.username, category:cat, videoUrl:data.secure_url, likes:0, comments:[], createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    alert('Berhasil Upload! 🔥'); closeModal(); document.getElementById('progress').classList.add('hidden');
+  }catch(err){ alert('GAGAL: '+(err.error?.message||JSON.stringify(err))); }
   document.getElementById('uploadBtn').innerText='Upload video Shorts'; document.getElementById('uploadBtn').disabled=false;
 }
 </script>
